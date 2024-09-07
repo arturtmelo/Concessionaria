@@ -1,0 +1,299 @@
+﻿@model IEnumerable<ConcessionariaMVC.Models.Cliente>
+
+@{
+    ViewBag.Title = "Clientes";
+}
+
+<h2>Clientes</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Nome</th>
+            <th>CPF</th>
+            <th>Telefone</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@Html.DisplayFor(modelItem => item.Nome)</td>
+                <td>@Html.DisplayFor(modelItem => item.CPF)</td>
+                <td>@Html.DisplayFor(modelItem => item.Telefone)</td>
+                <td>
+                    <button class="btn-editar editButton" data-id="@item.ClienteID"><i class="fas fa-edit"></i></button>
+                    <button class="btn-remover deleteButton" data-id="@item.ClienteID"><i class="fas fa-trash-alt"></i></button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="d-flex justify-content-center">
+    <button id="createButton" class="btn btn-primary"><i class="fas fa-plus"></i></button>
+</div>
+
+<!-- Modal Create -->
+<div class="modal fade" id="createClienteModal" tabindex="-1" role="dialog" aria-labelledby="createClienteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createClienteModalLabel">Criar Novo Cliente</h5>
+            </div>
+            <div class="modal-body">
+                @using (Html.BeginForm("Create", "Cliente", FormMethod.Post, new { id = "createClienteForm" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-group">
+                        @Html.Label("Nome")
+                        @Html.TextBox("Nome", null, new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessage("Nome", "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.Label("CPF")
+                        @Html.TextBox("CPF", null, new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessage("CPF", "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.Label("Telefone")
+                        @Html.TextBox("Telefone", null, new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessage("Telefone", "", new { @class = "text-danger" })
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="saveCreateButton"><i class="fas fa-check"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit -->
+<div class="modal fade" id="editClienteModal" tabindex="-1" role="dialog" aria-labelledby="editClienteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editClienteModalLabel">Editar Cliente</h5>
+            </div>
+            <div class="modal-body">
+                @using (Html.BeginForm("Edit", "Cliente", FormMethod.Post, new { id = "editClienteForm" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("ClienteID", "", new { id = "editClienteID" })
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().Nome)
+                        @Html.TextBoxFor(model => model.FirstOrDefault().Nome, new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().Nome, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().CPF)
+                        @Html.TextBoxFor(model => model.FirstOrDefault().CPF, new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().CPF, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().Telefone)
+                        @Html.TextBoxFor(model => model.FirstOrDefault().Telefone, new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().Telefone, "", new { @class = "text-danger" })
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="saveEditButton"><i class="fas fa-check"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirmar Deleção</h5>
+            </div>
+            <div class="modal-body">
+                <p id="deleteMessage">Tem certeza de que deseja deletar este cliente?</p>
+            </div>
+            <div class="modal-footer">
+                @using (Html.BeginForm("DeleteConfirmed", "Cliente", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("id", "", new { id = "deleteClienteID" })
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-check"></i></button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var selectedId;
+
+            // Apply masks for CPF and Telefone
+            $('#createClienteForm #CPF, #editClienteForm #CPF').mask('000.000.000-00');
+            $('#createClienteForm #Telefone, #editClienteForm #Telefone').mask('(00) 00000-0000');
+
+            // Show Create Modal
+            var createButton = document.getElementById('createButton');
+            if (createButton) {
+                createButton.addEventListener('click', function () {
+                    var createModal = document.getElementById('createClienteModal');
+                    if (createModal) {
+                        $(createModal).modal('show');
+                    }
+                });
+            }
+
+            // Save Create
+            var saveCreateButton = document.getElementById('saveCreateButton');
+            if (saveCreateButton) {
+                saveCreateButton.addEventListener('click', function () {
+                    var createForm = document.getElementById('createClienteForm');
+                    if (createForm) {
+                        $.ajax({
+                            url: createForm.action,
+                            type: createForm.method,
+                            data: $(createForm).serialize(),
+                            success: function (response) {
+                                if (response.success) {
+                                    location.reload();
+                                } else {
+                                    alert(response.errorMessage);
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Edit
+            var editButtons = document.querySelectorAll('.editButton');
+            editButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    selectedId = this.getAttribute('data-id');
+                    $.get('@Url.Action("GetCliente", "Cliente")', { id: selectedId }, function (data) {
+                        document.getElementById('editClienteID').value = data.ClienteID;
+                        document.getElementById('editClienteForm').querySelector('#Nome').value = data.Nome;
+                        document.getElementById('editClienteForm').querySelector('#CPF').value = data.CPF;
+                        document.getElementById('editClienteForm').querySelector('#Telefone').value = data.Telefone;
+
+                        $('#editClienteModal').modal('show');
+                    }).fail(function () {
+                        alert("Erro ao carregar os dados do cliente.");
+                    });
+                });
+            });
+
+            // Save Edit
+            var saveEditButton = document.getElementById('saveEditButton');
+            if (saveEditButton) {
+                saveEditButton.addEventListener('click', function () {
+                    var editForm = document.getElementById('editClienteForm');
+                    if (editForm) {
+                        $.ajax({
+                            url: editForm.action,
+                            type: editForm.method,
+                            data: $(editForm).serialize(),
+                            success: function (response) {
+                                if (response.success) {
+                                    location.reload();
+                                } else {
+                                    alert(response.errorMessage);
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Delete button click
+            var deleteButtons = document.querySelectorAll('.deleteButton');
+            deleteButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    selectedId = this.getAttribute('data-id');
+                    $.get('@Url.Action("GetClienteDetails", "Cliente")', { id: selectedId }, function (data) {
+                        document.getElementById('deleteClienteID').value = data.ClienteID;
+
+                        var deleteMessage = `
+                            <p>Tem certeza de que deseja deletar o seguinte cliente?</p>
+                            <ul>
+                                <li><strong>Nome:</strong> ${data.Nome}</li>
+                                <li><strong>CPF:</strong> ${data.CPF}</li>
+                                <li><strong>Telefone:</strong> ${data.Telefone}</li>
+                            </ul>
+                            <p>Ação não pode ser desfeita.</p>
+                        `;
+
+                        document.getElementById('deleteMessage').innerHTML = deleteMessage;
+                        $('#deleteModal').modal('show');
+                    }).fail(function () {
+                        alert("Erro ao carregar os dados do cliente.");
+                    });
+                });
+            });
+
+            // Validate CPF and Telefone fields on form submit
+            $('#createClienteForm').on('submit', function (e) {
+                var cpf = $('#createClienteForm #CPF').val();
+                var telefone = $('#createClienteForm #Telefone').val();
+
+                if (!validateCPF(cpf)) {
+                    alert('O CPF deve estar no formato xxx.xxx.xxx-xx.');
+                    e.preventDefault();
+                }
+
+                if (!validateTelefone(telefone)) {
+                    alert('O Telefone deve estar no formato (xx) xxxxx-xxxx.');
+                    e.preventDefault();
+                }
+            });
+
+            $('#editClienteForm').on('submit', function (e) {
+                var cpf = $('#editClienteForm #CPF').val();
+                var telefone = $('#editClienteForm #Telefone').val();
+
+                if (!validateCPF(cpf)) {
+                    alert('O CPF deve estar no formato xxx.xxx.xxx-xx.');
+                    e.preventDefault();
+                }
+
+                if (!validateTelefone(telefone)) {
+                    alert('O Telefone deve estar no formato (xx) xxxxx-xxxx.');
+                    e.preventDefault();
+                }
+            });
+
+            function validateCPF(cpf) {
+                var cpfRegex = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
+                return cpfRegex.test(cpf);
+            }
+
+            function validateTelefone(telefone) {
+                var telefoneRegex = /^\(\d{2}\) \d{5}-\d{4}$/;
+                return telefoneRegex.test(telefone);
+            }
+        });
+    </script>
+}

@@ -1,0 +1,411 @@
+﻿@model IEnumerable<ConcessionariaMVC.Models.Concessionaria>
+
+@{
+    ViewBag.Title = "Concessionárias";
+}
+
+<h2>Concessionárias</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Empresa</th>
+            <th>Endereço</th>
+            <th>Cidade</th>
+            <th>UF</th>
+            <th>CEP</th>
+            <th>Contato</th>
+            <th>Email</th>
+            <th>Qtd</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@Html.DisplayFor(modelItem => item.Nome)</td>
+                <td>@Html.DisplayFor(modelItem => item.Logradouro)</td>
+                <td>@Html.DisplayFor(modelItem => item.Cidade)</td>
+                <td>@Html.DisplayFor(modelItem => item.Estado)</td>
+                <td>@Html.DisplayFor(modelItem => item.CEP)</td>
+                <td>@Html.DisplayFor(modelItem => item.Telefone)</td>
+                <td>@Html.DisplayFor(modelItem => item.Email)</td>
+                <td>@Html.DisplayFor(modelItem => item.CapacidadeMaximaVeiculos)</td>
+                <td>
+                    <button class="btn-editar editButton" data-id="@item.ConcessionariaID"><i class="fas fa-edit"></i></button>
+                    <button class="btn-remover deleteButton" data-id="@item.ConcessionariaID"><i class="fas fa-trash-alt"></i></button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="d-flex justify-content-center">
+    <button id="createButton" class="btn adicionar"><i class="fas fa-plus"></i></button>
+</div>
+
+<!-- Modal Create -->
+<div class="modal fade" id="createConcessionariaModal" tabindex="-1" role="dialog" aria-labelledby="createConcessionariaModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createConcessionariaModalLabel">Criar Nova Concessionária</h5>
+            </div>
+            <div class="modal-body">
+                @using (Html.BeginForm("Create", "Concessionaria", FormMethod.Post, new { id = "createConcessionariaForm" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-group">
+                        @Html.Label("Nome")
+                        @Html.TextBox("Nome", null, new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessage("Nome", "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.Label("CEP")
+                        <div class="input-group">
+                            @Html.TextBox("CEP", null, new { @class = "form-control", required = "required" })
+                            <button type="button" class="btn btn-primary" id="searchCepButtonCreate"><i class="fas fa-search"></i><span id="loadingSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span></button>
+                        </div>
+                        @Html.ValidationMessage("CEP", "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.Label("Cidade")
+                        @Html.TextBox("Cidade", null, new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessage("Cidade", "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.Label("Estado")
+                        @Html.TextBox("Estado", null, new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessage("Estado", "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.Label("Endereço")
+                        @Html.TextBox("Logradouro", null, new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessage("Logradouro", "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.Label("Telefone")
+                        @Html.TextBox("Telefone", null, new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessage("Telefone", "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.Label("Email")
+                        @Html.TextBox("Email", null, new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessage("Email", "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.Label("Capacidade Máxima")
+                        @Html.TextBox("CapacidadeMaximaVeiculos", null, new { @class = "form-control", type = "number", required = "required" })
+                        @Html.ValidationMessage("CapacidadeMaximaVeiculos", "", new { @class = "text-danger" })
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="saveCreateButton"><i class="fas fa-check"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit -->
+<div class="modal fade" id="editConcessionariaModal" tabindex="-1" role="dialog" aria-labelledby="editConcessionariaModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editConcessionariaModalLabel">Editar Concessionária</h5>
+            </div>
+            <div class="modal-body">
+                @using (Html.BeginForm("Edit", "Concessionaria", FormMethod.Post, new { id = "editConcessionariaForm" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().Nome, htmlAttributes: new { @for = "Nome" })
+                        @Html.TextBoxFor(model => model.FirstOrDefault().Nome, new { @class = "form-control", required = "required", id = "Nome" })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().Nome, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().CEP, htmlAttributes: new { @for = "CEP" })
+                        <div class="input-group">
+                            @Html.TextBoxFor(model => model.FirstOrDefault().CEP, new { @class = "form-control", required = "required", id = "CEP" })
+                            <button type="button" class="btn btn-primary" id="searchCepButtonEdit"><i class="fas fa-search"></i><span id="loadingSpinnerEdit" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span></button>
+                        </div>
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().CEP, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().Cidade, htmlAttributes: new { @for = "Cidade" })
+                        @Html.TextBoxFor(model => model.FirstOrDefault().Cidade, new { @class = "form-control", required = "required", id = "Cidade" })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().Cidade, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().Estado, htmlAttributes: new { @for = "Estado" })
+                        @Html.TextBoxFor(model => model.FirstOrDefault().Estado, new { @class = "form-control", required = "required", id = "Estado" })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().Estado, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().Logradouro, htmlAttributes: new { @for = "Logradouro" })
+                        @Html.TextBoxFor(model => model.FirstOrDefault().Logradouro, new { @class = "form-control", required = "required", id = "Logradouro" })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().Logradouro, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().Telefone, htmlAttributes: new { @for = "Telefone" })
+                        @Html.TextBoxFor(model => model.FirstOrDefault().Telefone, new { @class = "form-control", required = "required", id = "Telefone" })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().Telefone, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().Email, htmlAttributes: new { @for = "Email" })
+                        @Html.TextBoxFor(model => model.FirstOrDefault().Email, new { @class = "form-control", required = "required", id = "Email" })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().Email, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        Capacidade Máxima
+                        @Html.TextBoxFor(model => model.FirstOrDefault().CapacidadeMaximaVeiculos, new { @class = "form-control", type = "number", required = "required", id = "CapacidadeMaximaVeiculos" })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().CapacidadeMaximaVeiculos, "", new { @class = "text-danger" })
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary" id="saveEditButton"><i class="fas fa-check"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirmar Deleção</h5>
+            </div>
+            <div class="modal-body">
+                <p id="deleteMessage">Tem certeza de que deseja deletar esta concessionária?</p>
+            </div>
+            <div class="modal-footer">
+                @using (Html.BeginForm("DeleteConfirmed", "Concessionaria", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("id", "", new { id = "deleteConcessionariaID" })
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-check"></i></button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+
+    <script>
+    $(document).ready(function () {
+        applyTelefoneMask();
+        applyCepMask();
+
+        $('#searchCepButtonCreate').click(searchCepCreate);
+        $('#searchCepButtonEdit').click(searchCepEdit);
+        $('#createButton').click(showCreateModal);
+        $('#saveCreateButton').click(saveCreate);
+        $('.editButton').click(showEditModal);
+        $('#saveEditButton').click(saveEdit);
+        $('.deleteButton').click(showDeleteModal);
+    });
+
+    // Telefone
+    function applyTelefoneMask() {
+        $('#createConcessionariaForm #Telefone, #editConcessionariaForm #Telefone').mask('(00) 00000-0000', {
+            placeholder: "(__) _____-____",
+            maxlength: false
+        });
+    }
+
+    // CEP
+    function applyCepMask() {
+        $('#createConcessionariaForm #CEP, #editConcessionariaForm #CEP').mask('00000-000', {
+            placeholder: "_____-___",
+            maxlength: false
+        });
+    }
+
+    function searchCepCreate() {
+        var cep = $('#createConcessionariaForm #CEP').val().replace(/\D/g, '');
+
+        if (cep.length === 8) {
+            $.ajax({
+                url: 'https://viacep.com.br/ws/' + cep + '/json/',
+                type: 'GET',
+                dataType: 'json',
+                success: handleCepCreateSuccess,
+                error: handleCepError
+            });
+        } else {
+            alert('CEP inválido.');
+        }
+    }
+
+    function searchCepEdit() {
+        var cep = $('#editConcessionariaForm #CEP').val().replace(/\D/g, '');
+
+        if (cep.length === 8) {
+            $.ajax({
+                url: 'https://viacep.com.br/ws/' + cep + '/json/',
+                type: 'GET',
+                dataType: 'json',
+                success: handleCepEditSuccess,
+                error: handleCepError
+            });
+        } else {
+            alert('CEP inválido.');
+        }
+    }
+
+    function handleCepCreateSuccess(data) {
+        if (data.erro) {
+            alert('CEP não encontrado.');
+        } else {
+            $('#createConcessionariaForm #Logradouro').val(data.logradouro);
+            $('#createConcessionariaForm #Cidade').val(data.localidade);
+            $('#createConcessionariaForm #Estado').val(data.uf);
+        }
+    }
+
+    function handleCepEditSuccess(data) {
+        if (data.erro) {
+            alert('CEP não encontrado.');
+        } else {
+            $('#editConcessionariaForm #Logradouro').val(data.logradouro);
+            $('#editConcessionariaForm #Cidade').val(data.localidade);
+            $('#editConcessionariaForm #Estado').val(data.uf);
+        }
+    }
+
+    function handleCepError() {
+        alert('Erro ao consultar o CEP.');
+    }
+
+    // Create modal
+    function showCreateModal() {
+        $('#createConcessionariaModal').modal('show');
+    }
+
+    function saveCreate() {
+        var createForm = $('#createConcessionariaForm');
+        $.ajax({
+            url: createForm.attr('action'),
+            type: createForm.attr('method'),
+            data: createForm.serialize(),
+            success: handleSaveCreateSuccess
+        });
+    }
+
+    function handleSaveCreateSuccess(response) {
+        if (response.success) {
+            location.reload();
+        } else {
+            alert(response.errorMessage);
+        }
+    }
+
+    // Edit modal
+    function showEditModal() {
+        var selectedId = $(this).data('id');
+        $.get('@Url.Action("GetConcessionaria", "Concessionaria")', { id: selectedId }, function (data) {
+            $('#editConcessionariaID').val(data.ConcessionariaID);
+            $('#editConcessionariaForm').find('#Nome').val(data.Nome);
+            $('#editConcessionariaForm').find('#CEP').val(data.CEP);
+            $('#editConcessionariaForm').find('#Cidade').val(data.Cidade);
+            $('#editConcessionariaForm').find('#Estado').val(data.Estado);
+            $('#editConcessionariaForm').find('#Logradouro').val(data.Logradouro);
+            $('#editConcessionariaForm').find('#Telefone').val(data.Telefone);
+            $('#editConcessionariaForm').find('#Email').val(data.Email);
+            $('#editConcessionariaForm').find('#CapacidadeMaximaVeiculos').val(data.CapacidadeMaximaVeiculos);
+            $('#editConcessionariaModal').modal('show');
+        }).fail(handleEditError);
+    }
+
+    function handleEditError() {
+        alert("Erro ao carregar os dados da concessionária.");
+    }
+
+    function saveEdit() {
+        var editForm = $('#editConcessionariaForm');
+        $.ajax({
+            url: editForm.attr('action'),
+            type: editForm.attr('method'),
+            data: editForm.serialize(),
+            success: handleSaveEditSuccess,
+            error: handleSaveEditError
+        });
+    }
+
+    function handleSaveEditSuccess(response) {
+        if (response.success) {
+            location.reload();
+        } else {
+            alert(response.errorMessage);
+        }
+    }
+
+    function handleSaveEditError(xhr, status, error) {
+        alert("Ocorreu um erro ao editar a concessionária: " + error);
+    }
+
+    // Delete modal
+    function showDeleteModal() {
+        var selectedId = $(this).data('id');
+        $.get('@Url.Action("GetConcessionaria", "Concessionaria")', { id: selectedId }, function (data) {
+            $('#deleteConcessionariaID').val(data.ConcessionariaID);
+
+            var deleteMessage = `
+                <p>Tem certeza de que deseja deletar a seguinte concessionária?</p>
+                <ul>
+                    <li><strong>Id:</strong> ${data.ConcessionariaID}</li>
+                    <li><strong>Nome:</strong> ${data.Nome}</li>
+                    <li><strong>Endereço:</strong> ${data.Logradouro}</li>
+                    <li><strong>Cidade:</strong> ${data.Cidade}</li>
+                    <li><strong>Estado:</strong> ${data.Estado}</li>
+                    <li><strong>CEP:</strong> ${data.CEP}</li>
+                    <li><strong>Telefone:</strong> ${data.Telefone}</li>
+                    <li><strong>Email:</strong> ${data.Email}</li>
+                    <li><strong>Capacidade Máxima de Veículos:</strong> ${data.CapacidadeMaximaVeiculos}</li>
+                </ul>
+                <p>Ação não pode ser desfeita.</p>
+            `;
+
+            $('#deleteMessage').html(deleteMessage);
+            $('#deleteModal').modal('show');
+        }).fail(handleDeleteError);
+    }
+
+    function handleDeleteError() {
+        alert("Erro ao carregar os dados da concessionária.");
+    }
+    </script>
+}
+

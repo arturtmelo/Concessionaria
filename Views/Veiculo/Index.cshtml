@@ -1,0 +1,373 @@
+﻿@model IEnumerable<ConcessionariaMVC.Models.Veiculo>
+
+@{
+    ViewBag.Title = "Veículos";
+    var fabricantes = ViewBag.Fabricantes as List<ConcessionariaMVC.Models.Fabricante>;
+}
+
+<h2>Veículos</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success"> @TempData["SuccessMessage"] </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger"> @TempData["ErrorMessage"] </div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Modelo</th>
+            <th>Ano</th>
+            <th>Valor</th>
+            <th>Fabricante</th>
+            <th>Tipo</th>
+            <th>Descrição</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@Html.DisplayFor(modelItem => item.Modelo)</td>
+                <td>@Html.DisplayFor(modelItem => item.AnoFabricacao)</td>
+                <td>@item.Preco.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"))</td>
+                <td>@(item.Fabricante != null ? item.Fabricante.Nome : "N/A")</td>
+                <td>@Html.DisplayFor(modelItem => item.TipoVeiculo)</td>
+                <td>@Html.DisplayFor(modelItem => item.Descricao)</td>
+                <td>
+                    <button class="btn-editar editButton" data-id="@item.VeiculoID"><i class="fas fa-edit"></i></button>
+                    <button class="btn-remover deleteButton" data-id="@item.VeiculoID"><i class="fas fa-trash-alt"></i></button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="d-flex justify-content-center">
+    <button id="createButton" class="btn btn-primary"><i class="fas fa-plus"></i></button>
+</div>
+
+<!-- Modal Create -->
+<div class="modal fade" id="createVeiculoModal" tabindex="-1" role="dialog" aria-labelledby="createVeiculoModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createVeiculoModalLabel">Criar Novo Veículo</h5>
+            </div>
+            <div class="modal-body">
+                @using (Html.BeginForm("Create", "Veiculo", FormMethod.Post, new { id = "createVeiculoForm" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-group">
+                        @Html.Label("Modelo")
+                        @Html.TextBox("Modelo", null, new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessage("Modelo", "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        Ano Fabricação
+                        @Html.TextBox("AnoFabricacao", null, new { @class = "form-control", required = "required", type = "number" })
+                        @Html.ValidationMessage("AnoFabricacao", "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        <label for="Preco">Valor</label>
+                        @Html.TextBox("Preco", null, new { @class = "form-control", required = "required", type = "text", placeholder = "R$ 0,00", id = "Preco" })
+                        @Html.ValidationMessage("Preco", "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.Label("Fabricante")
+                        @if (fabricantes != null && fabricantes.Any())
+                        {
+                            @Html.DropDownList("FabricanteID", new SelectList(fabricantes, "FabricanteID", "Nome"), "Selecione o fabricante", new { @class = "form-control" })
+                        }
+                        else
+                        {
+                            <p class="text-danger">Fabricantes não disponíveis. Por favor, adicione fabricantes antes de continuar.</p>
+                        }
+                    </div>
+
+                    <div class="form-group">
+                        Tipo Veículo
+                        <select id="TipoVeiculo" name="TipoVeiculo" class="form-control" required="required">
+                            <option value="">Selecione o tipo de veículo</option>
+                            @foreach (var tipo in Enum.GetValues(typeof(ConcessionariaMVC.Models.EnumTipoVeiculo)))
+                            {
+                                <option value="@tipo">@tipo</option>
+                            }
+                        </select>
+                        @Html.ValidationMessage("TipoVeiculo", "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        Descrição
+                        @Html.TextArea("Descricao", null, new { @class = "form-control", rows = 3 })
+                        @Html.ValidationMessage("Descricao", "", new { @class = "text-danger" })
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="saveCreateButton"><i class="fas fa-check"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit -->
+<div class="modal fade" id="editVeiculoModal" tabindex="-1" role="dialog" aria-labelledby="editVeiculoModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editVeiculoModalLabel">Editar Veículo</h5>
+            </div>
+
+            <div class="modal-body">
+                @using (Html.BeginForm("Edit", "Veiculo", FormMethod.Post, new { id = "editVeiculoForm" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("VeiculoID", "", new { id = "editVeiculoID" })
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().Modelo)
+                        @Html.TextBoxFor(model => model.FirstOrDefault().Modelo, new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().Modelo, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        Ano Fabricação
+                        @Html.TextBoxFor(model => model.FirstOrDefault().AnoFabricacao, new { @class = "form-control", required = "required", type = "number" })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().AnoFabricacao, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        <label for="Preco">Valor</label>
+                        @Html.TextBox("Preco", null, new { @class = "form-control", required = "required", type = "text", placeholder = "R$ 0,00", id = "Preco" })
+                        @Html.ValidationMessage("Preco", "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().FabricanteID, "Fabricante")
+                        @if (ViewBag.Fabricantes != null)
+                        {
+                            @Html.DropDownListFor(model => model.FirstOrDefault().FabricanteID, new SelectList(ViewBag.Fabricantes, "FabricanteID", "Nome"), "Selecione o fabricante", new { @class = "form-control" })
+                        }
+                        else
+                        {
+                            <p class="text-danger">Fabricantes não disponíveis. Por favor, adicione fabricantes antes de continuar.</p>
+                        }
+                    </div>
+
+                    <div class="form-group">
+                        Tipo Veículo
+                        @Html.EnumDropDownListFor(model => model.FirstOrDefault().TipoVeiculo, new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().TipoVeiculo, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        Descrição
+                        @Html.TextAreaFor(model => model.FirstOrDefault().Descricao, new { @class = "form-control", rows = 2 })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().Descricao, "", new { @class = "text-danger" })
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="saveEditButton"><i class="fas fa-check"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirmar Deleção</h5>
+            </div>
+            <div class="modal-body">
+                <p id="deleteMessage">Tem certeza de que deseja deletar este veículo?</p>
+            </div>
+            <div class="modal-footer">
+                @using (Html.BeginForm("DeleteConfirmed", "Veiculo", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("id", "", new { id = "deleteVeiculoID" })
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-check"></i></button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var selectedId;
+
+            // Função para formatar o valor em BRL com limite de dígitos
+            function formatToBRL(value) {
+                if (!value) return '';
+                value = value.replace(/\D/g, '');
+                if (value.length > 10) {
+                    value = value.substring(0, 10);
+                }
+                value = (value / 100).toFixed(2).replace('.', ',');
+                value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                return value;
+            }
+
+            // Função para remover formatação BRL
+            function unformatBRL(value) {
+                return value.replace(/\./g, '');
+            }
+
+            // Inicializar campo de Preço com a formatação BRL
+            function initializePrecoField(formId) {
+                var precoField = document.querySelector(`#${formId} #Preco`);
+                if (precoField) {
+                    precoField.addEventListener('input', function () {
+                        let cursorPosition = this.selectionStart;
+                        let originalLength = this.value.length;
+
+                        this.value = formatToBRL(this.value);
+
+                        let newLength = this.value.length;
+                        this.selectionStart = this.selectionEnd = cursorPosition + (newLength - originalLength);
+                    });
+
+                    precoField.addEventListener('blur', function () {
+                        if (this.value === '') {
+                            this.value = '0,00';
+                        } else {
+                            this.value = formatToBRL(this.value);
+                        }
+                    });
+
+                    precoField.value = formatToBRL(precoField.value);
+                }
+            }
+
+            // Modal Create
+            var createButton = document.getElementById('createButton');
+            if (createButton) {
+                createButton.addEventListener('click', function () {
+                    var createModal = document.getElementById('createVeiculoModal');
+                    if (createModal) {
+                        $(createModal).modal('show');
+                        initializePrecoField('createVeiculoForm'); // Inicializa campo Preco no formulário de criação
+                    }
+                });
+            }
+
+            // Salvar Create
+            var saveCreateButton = document.getElementById('saveCreateButton');
+            if (saveCreateButton) {
+                saveCreateButton.addEventListener('click', function () {
+                    var createForm = document.getElementById('createVeiculoForm');
+                    if (createForm) {
+                        var precoField = document.querySelector('#createVeiculoForm #Preco');
+                        if (precoField) {
+                            precoField.value = unformatBRL(precoField.value); // Envia valor sem formatação
+                        }
+
+                        $.ajax({
+                            url: createForm.action,
+                            type: createForm.method,
+                            data: $(createForm).serialize(),
+                            success: function (response) {
+                                if (response.success) {
+                                    location.reload();
+                                } else {
+                                    alert(response.errorMessage);
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Modal Edit
+            var editButtons = document.querySelectorAll('.editButton');
+            editButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    selectedId = this.getAttribute('data-id');
+                    $.get('@Url.Action("GetVeiculo", "Veiculo")', { id: selectedId }, function (data) {
+                        document.getElementById('editVeiculoID').value = data.VeiculoID;
+                        document.getElementById('editVeiculoForm').querySelector('#Modelo').value = data.Modelo;
+                        document.getElementById('editVeiculoForm').querySelector('#AnoFabricacao').value = data.AnoFabricacao;
+                        document.getElementById('editVeiculoForm').querySelector('#Preco').value = formatToBRL(data.Preco.toString().replace('.', ','));
+                        document.getElementById('editVeiculoForm').querySelector('#FabricanteID').value = data.FabricanteID;
+                        document.getElementById('editVeiculoForm').querySelector('#TipoVeiculo').value = data.TipoVeiculo;
+                        document.getElementById('editVeiculoForm').querySelector('#Descricao').value = data.Descricao;
+
+                        $('#editVeiculoModal').modal('show');
+                        initializePrecoField('editVeiculoForm'); // Inicializa campo Preco no formulário de edição
+                    }).fail(function () {
+                        alert("Erro ao carregar os dados do veículo.");
+                    });
+                });
+            });
+
+            // Salvar Edit
+            var saveEditButton = document.getElementById('saveEditButton');
+            if (saveEditButton) {
+                saveEditButton.addEventListener('click', function () {
+                    var editForm = document.getElementById('editVeiculoForm');
+                    if (editForm) {
+                        var precoField = document.querySelector('#editVeiculoForm #Preco');
+                        if (precoField) {
+                            precoField.value = unformatBRL(precoField.value); // Envia valor sem formatação
+                        }
+
+                        $.ajax({
+                            url: editForm.action,
+                            type: editForm.method,
+                            data: $(editForm).serialize(),
+                            success: function (response) {
+                                if (response.success) {
+                                    location.reload();
+                                } else {
+                                    alert(response.errorMessage);
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Delete
+            var deleteButtons = document.querySelectorAll('.deleteButton');
+            deleteButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    selectedId = this.getAttribute('data-id');
+                    $.get('@Url.Action("GetVeiculo", "Veiculo")', { id: selectedId }, function (data) {
+                        document.getElementById('deleteVeiculoID').value = data.VeiculoID;
+
+                        var deleteMessage = `
+                            <p>Tem certeza de que deseja deletar o seguinte veículo?</p>
+                            <ul>
+                                <li><strong>Modelo:</strong> ${data.Modelo}</li>
+                                <li><strong>Ano:</strong> ${data.AnoFabricacao}</li>
+                                <li><strong>Preço:</strong> ${formatToBRL(data.Preco.toString().replace('.', ','))}</li>
+                                <li><strong>Tipo:</strong> ${data.TipoVeiculo}</li>
+                                <li><strong>Descrição:</strong> ${data.Descricao}</li>
+                            </ul>
+                            <p>Ação não pode ser desfeita.</p>
+                        `;
+
+                        document.getElementById('deleteMessage').innerHTML = deleteMessage;
+                        $('#deleteModal').modal('show');
+                    }).fail(function () {
+                        alert("Erro ao carregar os dados do veículo.");
+                    });
+                });
+            });
+        });
+    </script>
+}

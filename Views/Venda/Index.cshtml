@@ -1,0 +1,363 @@
+﻿@model IEnumerable<ConcessionariaMVC.Models.Venda>
+
+@{
+    ViewBag.Title = "Vendas";
+    var veiculos = ViewBag.Veiculos as List<ConcessionariaMVC.Models.Veiculo>;
+    var concessionarias = ViewBag.Concessionarias as List<ConcessionariaMVC.Models.Concessionaria>;
+    var clientes = ViewBag.Clientes as List<ConcessionariaMVC.Models.Cliente>;
+}
+
+<h2>@ViewBag.Title</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Empresa</th>
+            <th>Fabricante</th>
+            <th>Veículo</th>
+            <th>Cliente</th>
+            <th>Data Venda</th>
+            <th>Valor</th>
+            <th>N.º Protocolo</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Concessionaria.Nome</td>
+                <td>@item.Veiculo.Fabricante</td>
+                <td>@item.Veiculo.Modelo</td>
+                <td>@item.Cliente.Nome</td>
+                <td>@item.DataVenda.ToShortDateString()</td>
+                <td>@item.PrecoVenda.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"))</td>
+                <td>@item.ProtocoloVenda</td>
+                <td>
+                    <button class="btn-editar editButton" data-id="@item.VendaID"><i class="fas fa-edit"></i></button>
+                    <button class="btn-remover deleteButton" data-id="@item.VendaID"><i class="fas fa-trash-alt"></i></button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="d-flex justify-content-center">
+    <button id="createButton" class="btn btn-primary"><i class="fas fa-plus"></i></button>
+    <a href="@Url.Action("Index", "Relatorio")" class="btn btn-info"><i class="fas fa-chart-line"></i></a>
+</div>
+
+<!-- Modal Create -->
+<div class="modal fade" id="createVendaModal" tabindex="-1" role="dialog" aria-labelledby="createVendaModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createVendaModalLabel">Criar Venda</h5>
+            </div>
+            <div class="modal-body">
+                @using (Html.BeginForm("Create", "Venda", FormMethod.Post, new { id = "createVendaForm" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-group">
+                        <label for="PrecoVenda">Veículo</label>
+                        @if (veiculos != null && veiculos.Any())
+                        {
+                            @Html.DropDownListFor(model => model.FirstOrDefault().VeiculoID, new SelectList(veiculos, "VeiculoID", "Modelo"), "Selecione o veículo", new { @class = "form-control" })
+                        }
+                        else
+                        {
+                            <p class="text-danger">Veículos não disponíveis. Por favor, adicione veículos antes de continuar.</p>
+                        }
+                    </div>
+
+                    <div class="form-group">
+                        <label for="PrecoVenda">Empresa</label>
+                        @if (concessionarias != null && concessionarias.Any())
+                        {
+                            @Html.DropDownListFor(model => model.FirstOrDefault().ConcessionariaID, new SelectList(concessionarias, "ConcessionariaID", "Nome"), "Selecione a concessionária", new { @class = "form-control" })
+                        }
+                        else
+                        {
+                            <p class="text-danger">Concessionárias não disponíveis. Por favor, adicione concessionárias antes de continuar.</p>
+                        }
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().ClienteID, "Cliente")
+                        @if (clientes != null && clientes.Any())
+                        {
+                            @Html.DropDownListFor(model => model.FirstOrDefault().ClienteID, new SelectList(clientes, "ClienteID", "Nome"), "Selecione o cliente", new { @class = "form-control" })
+                        }
+                        else
+                        {
+                            <p class="text-danger">Clientes não disponíveis. Por favor, adicione clientes antes de continuar.</p>
+                        }
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().DataVenda)
+                        @Html.TextBoxFor(model => model.FirstOrDefault().DataVenda, new { @class = "form-control", required = "required", type = "date" })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().DataVenda, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        <label for="PrecoVenda">Valor</label>
+                        @Html.TextBox("PrecoVenda", null, new { @class = "form-control", required = "required", type = "text", placeholder = "R$ 0,00", id = "PrecoVenda" })
+                        @Html.ValidationMessage("PrecoVenda", "", new { @class = "text-danger" })
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="saveCreateButton"><i class="fas fa-check"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit -->
+<div class="modal fade" id="editVendaModal" tabindex="-1" role="dialog" aria-labelledby="editVendaModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editVendaModalLabel">Editar Venda</h5>
+            </div>
+
+            <div class="modal-body">
+                @using (Html.BeginForm("Edit", "Venda", FormMethod.Post, new { id = "editVendaForm" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("VendaID", "", new { id = "editVendaID" })
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().VeiculoID, "Veículo")
+                        @Html.DropDownListFor(model => model.FirstOrDefault().VeiculoID, new SelectList(veiculos, "VeiculoID", "Modelo"), "Selecione o veículo", new { @class = "form-control" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().ConcessionariaID, "Concessionária")
+                        @Html.DropDownListFor(model => model.FirstOrDefault().ConcessionariaID, new SelectList(concessionarias, "ConcessionariaID", "Nome"), "Selecione a concessionária", new { @class = "form-control" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().ClienteID, "Cliente")
+                        @Html.DropDownListFor(model => model.FirstOrDefault().ClienteID, new SelectList(clientes, "ClienteID", "Nome"), "Selecione o cliente", new { @class = "form-control" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().DataVenda)
+                        @Html.TextBoxFor(model => model.FirstOrDefault().DataVenda, new { @class = "form-control", required = "required", type = "date" })
+                    </div>
+
+                    <div class="form-group">
+                        <label for="PrecoVenda">Valor</label>
+                        @Html.TextBox("PrecoVenda", null, new { @class = "form-control", required = "required", type = "text", placeholder = "R$ 0,00", id = "PrecoVenda" })
+                        @Html.ValidationMessage("PrecoVenda", "", new { @class = "text-danger" })
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="saveEditButton"><i class="fas fa-check"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Deletar Venda</h5>
+            </div>
+            <div class="modal-body">
+                <p id="deleteMessage">Tem certeza de que deseja deletar esta venda?</p>
+            </div>
+            <div class="modal-footer">
+                @using (Html.BeginForm("DeleteConfirmed", "Venda", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("id", "", new { id = "deleteVendaID" })
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-check"></i></button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            var selectedId;
+
+            // Função para formatar o valor em BRL com limite de dígitos
+            function formatToBRL(value) {
+                if (!value) return 'R$ 0,00';
+                value = value.replace(/\D/g, '');
+                if (value.length > 10) {
+                    value = value.substring(0, 10);
+                }
+                value = (value / 100).toFixed(2).replace('.', ',');
+                value = value.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                return 'R$ ' + value;
+            }
+
+            // Função para remover formatação BRL
+            function unformatBRL(value) {
+                return value.replace('R$ ', '').replace(/\./g, '');
+            }
+
+            // Inicializar campo de Preço com a formatação BRL
+            function initializePrecoField(formId) {
+                var precoField = document.querySelector(`#${formId} #PrecoVenda`);
+                if (precoField) {
+                    precoField.addEventListener('input', function (e) {
+                        let cursorPosition = this.selectionStart;
+                        let originalLength = this.value.length;
+
+                        this.value = formatToBRL(this.value);
+
+                        let newLength = this.value.length;
+                        this.selectionStart = this.selectionEnd = cursorPosition + (newLength - originalLength);
+                    });
+
+                    precoField.addEventListener('blur', function () {
+                        if (this.value === '') {
+                            this.value = 'R$ 0,00';
+                        } else {
+                            this.value = formatToBRL(this.value);
+                        }
+                    });
+
+                    precoField.value = formatToBRL(precoField.value);
+                }
+            }
+
+            // Modal Create
+            var createButton = document.getElementById('createButton');
+            if (createButton) {
+                createButton.addEventListener('click', function () {
+                    var createModal = document.getElementById('createVendaModal');
+                    if (createModal) {
+                        $(createModal).modal('show');
+                        initializePrecoField('createVendaForm'); // Inicializa campo PrecoVenda no formulário de criação
+                    }
+                });
+            }
+
+            // Salvar Create
+            var saveCreateButton = document.getElementById('saveCreateButton');
+            if (saveCreateButton) {
+                saveCreateButton.addEventListener('click', function () {
+                    var createForm = document.getElementById('createVendaForm');
+                    if (createForm) {
+                        var precoField = document.querySelector('#createVendaForm #PrecoVenda');
+                        if (precoField) {
+                            precoField.value = unformatBRL(precoField.value); // Envia valor sem formatação
+                        }
+
+                        $.ajax({
+                            url: createForm.action,
+                            type: createForm.method,
+                            data: $(createForm).serialize(),
+                            success: function (response) {
+                                if (response.success) {
+                                    location.reload();
+                                } else {
+                                    alert(response.errorMessage);
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Modal Edit
+            var editButtons = document.querySelectorAll('.editButton');
+            editButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    selectedId = this.getAttribute('data-id');
+                    $.get('@Url.Action("GetVenda", "Venda")', { id: selectedId }, function (data) {
+                        document.getElementById('editVendaID').value = data.VendaID;
+                        document.getElementById('editVendaForm').querySelector('#VeiculoID').value = data.VeiculoID;
+                        document.getElementById('editVendaForm').querySelector('#ConcessionariaID').value = data.ConcessionariaID;
+                        document.getElementById('editVendaForm').querySelector('#ClienteID').value = data.ClienteID;
+
+                        // Formatar a data corretamente para o campo de data
+                        var dataVendaFormatada = new Date(data.DataVenda).toISOString().split('T')[0];
+                        document.getElementById('editVendaForm').querySelector('#DataVenda').value = dataVendaFormatada;
+
+                        document.getElementById('editVendaForm').querySelector('#PrecoVenda').value = formatToBRL(data.PrecoVenda.toString().replace('.', ','));
+
+                        $('#editVendaModal').modal('show');
+                        initializePrecoField('editVendaForm'); // Inicializa campo PrecoVenda no formulário de edição
+                    }).fail(function () {
+                        alert("Erro ao carregar os dados da venda.");
+                    });
+                });
+            });
+
+            // Salvar Edit
+            var saveEditButton = document.getElementById('saveEditButton');
+            if (saveEditButton) {
+                saveEditButton.addEventListener('click', function () {
+                    var editForm = document.getElementById('editVendaForm');
+                    if (editForm) {
+                        var precoField = document.querySelector('#editVendaForm #PrecoVenda');
+                        if (precoField) {
+                            precoField.value = unformatBRL(precoField.value); // Envia valor sem formatação
+                        }
+
+                        $.ajax({
+                            url: editForm.action,
+                            type: editForm.method,
+                            data: $(editForm).serialize(),
+                            success: function (response) {
+                                if (response.success) {
+                                    location.reload();
+                                } else {
+                                    alert(response.errorMessage);
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Delete
+            var deleteButtons = document.querySelectorAll('.deleteButton');
+            deleteButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    selectedId = this.getAttribute('data-id');
+                    $.get('@Url.Action("GetVendaDetails", "Venda")', { id: selectedId }, function (data) {
+                        document.getElementById('deleteVendaID').value = data.VendaID;
+
+                        var deleteMessage = `
+                            <ul>
+                                <li><strong>Veículo:</strong> ${data.Modelo}</li>
+                                <li><strong>Preço Venda:</strong> ${formatToBRL(data.PrecoVenda.toString().replace('.', ','))}</li>
+                                <li><strong>Concessionária:</strong> ${data.Concessionaria}</li>
+                                <li><strong>Cliente:</strong> ${data.Cliente}</li>
+                            </ul>
+                            <p>Ação não pode ser desfeita.</p>
+                        `;
+
+                        document.getElementById('deleteMessage').innerHTML = deleteMessage;
+                        $('#deleteModal').modal('show');
+                    }).fail(function () {
+                        alert("Erro ao carregar os dados da venda.");
+                    });
+                });
+            });
+        });
+    </script>
+}

@@ -1,0 +1,281 @@
+﻿@model IEnumerable<ConcessionariaMVC.Models.Fabricante>
+
+@{ ViewBag.Title = "Fabricantes"; }
+
+<h2>@ViewBag.Title</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{<div class="alert alert-success">@TempData["SuccessMessage"]</div>}
+@if (TempData["ErrorMessage"] != null)
+{<div class="alert alert-danger">@TempData["ErrorMessage"]</div>}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Empresa</th>
+            <th>Nacionalidade</th>
+            <th>Fundação</th>
+            <th>Site</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@Html.DisplayFor(modelItem => item.Nome)</td>
+                <td>@Html.DisplayFor(modelItem => item.PaisOrigem)</td>
+                <td>@Html.DisplayFor(modelItem => item.AnoFundacao)</td>
+                <td>@Html.DisplayFor(modelItem => item.Site)</td>
+                <td>
+                    <button class="btn-editar editButton" data-id="@item.FabricanteID"><i class="fas fa-edit"></i></button>
+                    <button class="btn-remover deleteButton" data-id="@item.FabricanteID"><i class="fas fa-trash-alt"></i></button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="d-flex justify-content-center">
+    <button id="createButton" class="btn btn-primary"><i class="fas fa-plus"></i></button>
+</div>
+
+<!-- Modal Create -->
+<div class="modal fade" id="createFabricanteModal" tabindex="-1" role="dialog" aria-labelledby="createFabricanteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createFabricanteModalLabel">Criar Novo Fabricante</h5>
+            </div>
+            <div class="modal-body">
+                @using (Html.BeginForm("Create", "Fabricante", FormMethod.Post, new { id = "createFabricanteForm" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-group">
+                        @Html.Label("Nome")
+                        @Html.TextBox("Nome", null, new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessage("Nome", "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.Label("País de Origem", "País de Origem")
+                        @Html.TextBox("PaisOrigem", null, new { @class = "form-control" })
+                        @Html.ValidationMessage("PaisOrigem", "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.Label("Ano de Fundação")
+                        @Html.TextBox("AnoFundacao", null, new { @class = "form-control", type = "number", required = "required" })
+                        @Html.ValidationMessage("AnoFundacao", "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.Label("Site")
+                        @Html.TextBox("Site", null, new { @class = "form-control", type = "url" })
+                        @Html.ValidationMessage("Site", "", new { @class = "text-danger" })
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary" id="saveCreateButton"><i class="fas fa-check"></i> Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit -->
+<div class="modal fade" id="editFabricanteModal" tabindex="-1" role="dialog" aria-labelledby="editFabricanteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editFabricanteModalLabel">Editar Fabricante</h5>
+            </div>
+            <div class="modal-body">
+                @using (Html.BeginForm("Edit", "Fabricante", FormMethod.Post, new { id = "editFabricanteForm" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("FabricanteID", "", new { id = "editFabricanteID" })
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().Nome)
+                        @Html.TextBoxFor(model => model.FirstOrDefault().Nome, new { @class = "form-control", required = "required" })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().Nome, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        País Origem
+                        @Html.TextBoxFor(model => model.FirstOrDefault().PaisOrigem, new { @class = "form-control" })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().PaisOrigem, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        Ano Fundação
+                        @Html.TextBoxFor(model => model.FirstOrDefault().AnoFundacao, new { @class = "form-control", type = "number", required = "required" })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().AnoFundacao, "", new { @class = "text-danger" })
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.FirstOrDefault().Site)
+                        @Html.TextBoxFor(model => model.FirstOrDefault().Site, new { @class = "form-control", type = "url" })
+                        @Html.ValidationMessageFor(model => model.FirstOrDefault().Site, "", new { @class = "text-danger" })
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="saveEditButton"><i class="fas fa-check"></i></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirmar Deleção</h5>
+            </div>
+            <div class="modal-body">
+                <p id="deleteMessage">Tem certeza de que deseja deletar este fabricante?</p>
+            </div>
+            <div class="modal-footer">
+                @using (Html.BeginForm("DeleteConfirmed", "Fabricante", FormMethod.Post))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("id", "", new { id = "deleteFabricanteID" })
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-check"></i></button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            initializeEventListeners();
+        });
+
+        function initializeEventListeners() {
+            var createButton = document.getElementById('createButton');
+            if (createButton) {
+                createButton.addEventListener('click', showCreateModal);
+            }
+
+            var saveCreateButton = document.getElementById('saveCreateButton');
+            if (saveCreateButton) {
+                saveCreateButton.addEventListener('click', saveCreate);
+            }
+
+            var editButtons = document.querySelectorAll('.editButton');
+            editButtons.forEach(function (button) {
+                button.addEventListener('click', showEditModal);
+            });
+
+            var saveEditButton = document.getElementById('saveEditButton');
+            if (saveEditButton) {
+                saveEditButton.addEventListener('click', saveEdit);
+            }
+
+            var deleteButtons = document.querySelectorAll('.deleteButton');
+            deleteButtons.forEach(function (button) {
+                button.addEventListener('click', showDeleteModal);
+            });
+        }
+
+        function showCreateModal() {
+            var createModal = document.getElementById('createFabricanteModal');
+            if (createModal) {
+                $(createModal).modal('show');
+            }
+        }
+
+        function saveCreate() {
+            var createForm = document.getElementById('createFabricanteForm');
+            if (createForm) {
+                $.ajax({
+                    url: createForm.action,
+                    type: createForm.method,
+                    data: $(createForm).serialize(),
+                    success: handleSaveCreateSuccess
+                });
+            }
+        }
+
+        function handleSaveCreateSuccess(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                alert(response.errorMessage);
+            }
+        }
+
+        function showEditModal() {
+            var selectedId = this.getAttribute('data-id');
+            $.get('@Url.Action("GetFabricante", "Fabricante")', { id: selectedId }, function (data) {
+                document.getElementById('editFabricanteID').value = data.FabricanteID;
+                document.getElementById('editFabricanteForm').querySelector('#Nome').value = data.Nome;
+                document.getElementById('editFabricanteForm').querySelector('#PaisOrigem').value = data.PaisOrigem;
+                document.getElementById('editFabricanteForm').querySelector('#AnoFundacao').value = data.AnoFundacao;
+                document.getElementById('editFabricanteForm').querySelector('#Site').value = data.Site;
+                $('#editFabricanteModal').modal('show');
+            }).fail(handleEditError);
+        }
+
+        function handleEditError() {
+            alert("Erro ao carregar os dados do fabricante.");
+        }
+
+        function saveEdit() {
+            var editForm = document.getElementById('editFabricanteForm');
+            if (editForm) {
+                $.ajax({
+                    url: editForm.action,
+                    type: editForm.method,
+                    data: $(editForm).serialize(),
+                    success: handleSaveEditSuccess,
+                    error: handleSaveEditError
+                });
+            }
+        }
+
+        function handleSaveEditSuccess(response) {
+            if (response.success) {
+                location.reload();
+            } else {
+                alert(response.errorMessage);
+            }
+        }
+
+        function handleSaveEditError(xhr, status, error) {
+            alert("Ocorreu um erro ao editar o fabricante: " + error);
+        }
+
+        function showDeleteModal() {
+            var selectedId = this.getAttribute('data-id');
+            $.get('@Url.Action("GetFabricanteDetails", "Fabricante")', { id: selectedId }, function (data) {
+                document.getElementById('deleteFabricanteID').value = data.FabricanteID;
+
+                var deleteMessage = `
+                    <p>Deseja deletar o seguinte fabricante?</p>
+                    <ul>
+                        <li><strong>Nome:</strong> ${data.Nome}</li>
+                        <li><strong>País Origem:</strong> ${data.PaisOrigem}</li>
+                        <li><strong>Ano Fundação:</strong> ${data.AnoFundacao}</li>
+                        <li><strong>Site:</strong> ${data.Site}</li>
+                    </ul>
+                    <p>Ação não pode ser desfeita.</p>
+                `;
+
+                document.getElementById('deleteMessage').innerHTML = deleteMessage;
+                $('#deleteModal').modal('show');
+            }).fail(handleDeleteError);
+        }
+
+        function handleDeleteError() {
+            alert("Erro ao carregar os dados do fabricante.");
+        }
+    </script>
+}
