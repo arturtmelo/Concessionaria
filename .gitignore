@@ -1,7 +1,12 @@
-﻿# Ignore Visual Studio temporary files, build results, and
-# build directories.
+﻿# Ignorar a pasta .vs (Visual Studio)
 .vs/
+
+# Ignorar arquivos gerados automaticamente
 *.user
 *.suo
-*.userosscache
-*.sln.docstates
+*.tmp
+*.log
+*.sdf
+*.vcxproj.user
+*.dbmdl
+*.vscode/
